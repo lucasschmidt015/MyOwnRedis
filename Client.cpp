@@ -1,40 +1,44 @@
-#include <iostream>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/ip.h>
+
+
+static void die(const char *msg) {
+    int err = errno;
+    fprintf(stderr, "[%d] %s\n", err, msg);
+    abort();
+}
 
 int main() {
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
-    char buffer[1024] = {0};
-    
-    // Create socket
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    
-    // Bind to address
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(8080);
-    bind(server_fd, (struct sockaddr*)&address, sizeof(address));
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) {
+        die("socket()");
+    }
 
-    // Listen for incoming connections
-    listen(server_fd, 3);
-    
-    // Accept connection
-    new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
-    
-    // Receive data from the client
-    read(new_socket, buffer, 1024);
-    std::cout << "Message from client: " << buffer << std::endl;
+    struct sockaddr_in addr = {};
+    addr.sin_family = AF_INET;
+    addr.sin_port = ntohs(1234);
+    addr.sin_addr.s_addr = ntohl(INADDR_LOOPBACK);  // 127.0.0.1
+    int rv = connect(fd, (const struct sockaddr *)&addr, sizeof(addr));
+    if (rv) {
+        die("connect");
+    }
 
-    // Send response
-    const char* response = "Hello from server";
-    send(new_socket, response, strlen(response), 0);
-    
-    // Close socket
-    close(new_socket);
-    close(server_fd);
-    
+    char msg[] = "hello";
+    write(fd, msg, strlen(msg));
+
+    char rbuf[64] = {};
+    ssize_t n = read(fd, rbuf, sizeof(rbuf) - 1);
+    if (n < 0) {
+        die("read");
+    }
+    printf("server says: %s\n", rbuf);
+    close(fd);
     return 0;
 }
