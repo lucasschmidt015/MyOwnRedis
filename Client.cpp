@@ -48,6 +48,8 @@ static int32_t write_all(int fd, const char *buf, size_t n) {
 
 const size_t k_max_msg = 4096;
 
+//This function will send data to the server, and read the response. 
+//It difenes a custom protocol where a 4 bytes number is sent exposifying the lenght of the message, and the message itself.
 static int32_t query(int fd, const char *text) {
     uint32_t len = (uint32_t)strlen(text);
     if (len > k_max_msg) {
@@ -94,11 +96,14 @@ static int32_t query(int fd, const char *text) {
 }
 
 int main() {
+
+    //Creates the socket 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
         die("socket()");
     }
 
+    //Define the socket options 
     struct sockaddr_in addr = {};
     addr.sin_family = AF_INET;
     addr.sin_port = ntohs(1234);
@@ -108,7 +113,7 @@ int main() {
         die("connect");
     }
 
-    // multiple requests
+    // Send the requests 
     int32_t err = query(fd, "hello1");
     if (err) {
         goto L_DONE;
