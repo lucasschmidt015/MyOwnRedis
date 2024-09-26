@@ -1,4 +1,4 @@
-MyOwnRedis
+#MyOwnRedis
 MyOwnRedis is a Redis-like application developed to enhance understanding of low-level programming concepts. This project was created by following the guide available at [Build Your Own Redis](https://build-your-own.org/redis/).
 
 ## Overview
